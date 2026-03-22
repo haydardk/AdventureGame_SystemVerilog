@@ -1,0 +1,145 @@
+module tb_adventure;
+
+    logic clk;
+    logic rst;
+    logic north;
+    logic south;
+    logic east;
+    logic west;
+
+    logic has_sword;
+    logic Haydar_with_us;
+    logic in_DD;
+
+    logic win_goto_VV;
+    logic die_goto_GG;
+    logic win_with_treasure;
+    logic Haydar_win_you_lose;
+
+    // room_fsm instance
+    room_fsm u_room (
+        .clk(clk),
+        .rst(rst),
+        .north(north),
+        .south(south),
+        .east(east),
+        .west(west),
+        .has_sword(has_sword),
+        .Haydar_with_us(Haydar_with_us),
+        .in_DD(in_DD)
+    );
+
+    // inventory_fsm instance
+    inventory_fsm u_inventory (
+        .clk(clk),
+        .rst(rst),
+        .has_sword(has_sword),
+        .Haydar_with_us(Haydar_with_us),
+        .in_DD(in_DD),
+        .win_goto_VV(win_goto_VV),
+        .die_goto_GG(die_goto_GG),
+        .win_with_treasure(win_with_treasure),
+        .Haydar_win_you_lose(Haydar_win_you_lose)
+    );
+
+    // clock generation
+    initial begin
+        clk = 0;
+        forever #5 clk = ~clk;
+    end
+
+    // test sequence
+    initial begin
+        // ba?lang?ç de?erleri
+        rst = 1;
+        north = 0;
+        south = 0;
+        east = 0;
+        west = 0;
+
+        #12;
+        rst = 0;
+
+        // SENARYO 1: sword almadan dragon'a git -> die_goto_GG
+        pulse_east();   // CC -> TT
+        pulse_south();  // TT -> RR
+        pulse_east();   // RR -> DD
+
+        #20;
+
+        // yeniden reset
+        rst = 1;
+        #10;
+        rst = 0;
+
+        // SENARYO 2: sword al, sonra dragon -> win_goto_VV
+        pulse_east();   // CC -> TT
+        pulse_south();  // TT -> RR
+        pulse_west();   // RR -> SSS
+        #10;            // sword register için 1 clock bekle
+        pulse_east();   // SSS -> RR
+        pulse_east();   // RR -> DD
+
+        #20;
+
+        // yeniden reset
+        rst = 1;
+        #10;
+        rst = 0;
+
+        // SENARYO 3: Haydar al, sword alma -> Haydar wins, you lose
+        pulse_east();   // CC -> TT
+        pulse_north();  // TT -> HD
+        #10;            // Haydar register için 1 clock bekle
+        pulse_south();  // HD -> TT
+        pulse_south();  // TT -> RR
+        pulse_east();   // RR -> DD
+
+        #20;
+
+        // yeniden reset
+        rst = 1;
+        #10;
+        rst = 0;
+
+        // SENARYO 4: hem Haydar hem sword -> treasure win
+        pulse_east();   // CC -> TT
+        pulse_north();  // TT -> HD
+        #10;
+        pulse_south();  // HD -> TT
+        pulse_south();  // TT -> RR
+        pulse_west();   // RR -> SSS
+        #10;
+        pulse_east();   // SSS -> RR
+        pulse_east();   // RR -> DD
+
+        #30;
+        $stop;
+    end
+
+    // yön pulse tasklar?
+    task pulse_north;
+        begin
+            north = 1; #10; north = 0; #10;
+        end
+    endtask
+
+    task pulse_south;
+        begin
+            south = 1; #10; south = 0; #10;
+        end
+    endtask
+
+    task pulse_east;
+        begin
+            east = 1; #10; east = 0; #10;
+        end
+    endtask
+
+    task pulse_west;
+        begin
+            west = 1; #10; west = 0; #10;
+        end
+    endtask
+
+endmodule
